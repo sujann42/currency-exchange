@@ -1,0 +1,88 @@
+Dynamic scaling UP and DOWN
+1. Service Registration: Naming Server (Eureka)
+2. Service Discovery: Ribbon (Client Side Load Balancing) Give me current instance of the Service
+3. Feign (Easier Rest Clients)- Mechanism to write Simple Restful Clients
+
+
+
+1. Visibility and Monitoring:    Zipkin Distributed Tracing :  Netflix API gateway
+2. Fault Tolerance: Histrix
+
+ADVANTAGES of MICROSERVICES:
+1. Enables to implement new technologies easily [can build any micro service in Java, .Net and other languages]
+2. New micro-services we can use new tech
+3. We can dynamically scale applications based on load
+4. Faster Release cycles
+
+MICROSERVICES COMPONENTS:
+========================
+Ports
+Application	Port
+Limits Service	8081, 8082, ...
+Spring Cloud Config Server	8888
+
+Currency Exchange Service	8000, 8001, 8002, ..
+Currency Conversion Service	8100, 8101, 8102, ...
+Netflix Eureka Naming Server	8761
+Netflix Zuul API Gateway Server	8765
+Zipkin Distributed Tracing Server	9411
+
+URLs
+Application	URL
+Limits Service	http://localhost:8080/limits http://localhost:8080/actuator/refresh (POST)
+Spring Cloud Config Server	http://localhost:8888/limits-service/default http://localhost:8888/limits-service/dev
+Currency Converter Service - Direct Call	http://localhost:8100/currency-converter/from/USD/to/INR/quantity/10
+Currency Converter Service - Feign	http://localhost:8100/currency-converter-feign/from/EUR/to/INR/quantity/10000
+Currency Exchange Service	http://localhost:8000/currency-exchange/from/EUR/to/INR http://localhost:8001/currency-exchange/from/USD/to/INR
+Eureka	http://localhost:8761/
+Zuul - Currency Exchange & Exchange Services	http://localhost:8765/currency-exchange-service/currency-exchange/from/EUR/to/INR http://localhost:8765/currency-conversion-service/currency-converter-feign/from/USD/to/INR/quantity/10
+Zipkin	http://localhost:9411/zipkin/
+Spring Cloud Bus Refresh	http://localhost:8080/actuator/bus-refresh (POST)
+
+
+￼
+
+CONFIGURATION IS PROVIDED IN GITHUB AND ITS MANAGED BY SPRINGCLOUDCONFIGSERVER
+
+1. Create a microservice named limits-service with dependencies config server, devtools, web, actuator.
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+HARD_CODED VALUES: min and max
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ For hard-coded values: create a class called: LimitConfiguration
+    public class LimitConfiguration {
+        private int maximum;
+        private int minimum;
+    }
+3) Controller called: LimitsConfiguratonController
+
+    //This will return hard-coded mim and max values
+    @GetMapping("/limits")
+    public LimitConfiguration retrieveLimitsFromConfigurations(){
+        return new LimitConfiguration(1000, 1);
+    }
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+READING FROM APPLICATION.PROPERTIES: MIN AND MAX
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+1) Class:
+@Component
+@ConfigurationProperties("limits-service")
+public class LimitConfiguration {
+    private int maximum;
+    private int minimum;
+}
+2) CONTROLLER
+//This will read the data from application.properties
+    @GetMapping("/limits/app-prop")
+    public LimitConfiguration retrieveLimitsFromConfigurationsAppProperties(){
+        return new LimitConfiguration(configuration.getMaximum(), configuration.getMinimum());
+ }
+
+ 3) Application.properties:
+ limits-service.minimum = 2
+ limits-service.maximum = 188
+ ----------------------------------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+READING FROM APPLICATION.PROPERTIES: MIN AND MAX
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
